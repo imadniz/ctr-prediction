@@ -1,0 +1,16 @@
+{
+  "model_type": "GradientBoostingClassifier",
+  "features": [
+    "hour",
+    "C1",
+    "banner_pos",
+    "site_category",
+    "app_category",
+    "device_type",
+    "device_conn_type"
+  ],
+  "n_features": 7,
+  "test_auc": 0.5408781856219095,
+  "test_ctr": 0.044,
+  "version": "1.0"
+}
