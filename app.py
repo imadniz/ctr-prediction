@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import pickle
+import joblib
 import numpy as np
 import os
 
 # Load model
 with open('ctr_model.pkl', 'rb') as f:
-    model = pickle.load(f)
+    model = joblib.load('ctr_model.pkl')
 
 app = FastAPI(title="CTR Prediction API")
 
