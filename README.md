@@ -11,17 +11,25 @@
 
 ---
 
+## Live Demo
+
+**Production API:** [https://ctr-prediction-1.onrender.com/docs](https://ctr-prediction-1.onrender.com/docs)
+
+Try the interactive API documentation and make real-time CTR predictions!
+
+---
+
 ## Table of Contents
 
 - [Overview](#overview)
 - [Business Impact](#business-impact)
-- [Technical Architecture](#technical-architecture)
-- [Project Structure](#project-structure)
+- [System Architecture](#system-architecture)
 - [Machine Learning Pipeline](#machine-learning-pipeline)
 - [API Deployment](#api-deployment)
 - [Quick Start](#quick-start)
 - [Model Performance](#model-performance)
 - [Key Insights](#key-insights)
+- [Technologies Used](#technologies-used)
 - [Contact](#contact)
 
 ---
@@ -30,70 +38,92 @@
 
 Built a complete machine learning system to predict click-through rates for digital advertising using the Avazu CTR dataset from Kaggle. The project demonstrates the full ML lifecycle from exploratory data analysis through production deployment, including advanced feature engineering, model comparison, and a containerized REST API serving real-time predictions.
 
-**Live API:** https://ctr-prediction-1.onrender.com/docs
+**Key Highlights:**
+- 75-80% AUC-ROC with XGBoost model
+- 40-60% CTR lift on top-decile targeting
+- Production API with <100ms latency
+- Containerized deployment with Docker
+- Auto-deployment via GitHub CI/CD
 
 ---
 
 ## Business Impact
 
-**Model Performance:**
+### Model Performance
 - **75-80% AUC-ROC:** Significantly outperforms random baseline (50%)
 - **40-60% CTR Lift:** Achieved on top 10% of predicted users
 - **2.5-3x Efficiency:** Better targeting compared to random ad serving
 - **Sub-100ms Latency:** Production API suitable for real-time bidding systems
 
-**Business Value:**
+### Business Value
 - Enables precision ad targeting to high-intent users
 - Reduces wasted ad spend on low-probability clicks
 - Provides actionable confidence scores for budget allocation
 - Scalable architecture supports production traffic
 
----
-
-## Technical Architecture
-
-### Machine Learning Stack
-- **Data Processing:** pandas, NumPy
-- **Models:** scikit-learn (Logistic Regression), XGBoost (Gradient Boosting)
-- **Feature Engineering:** 30+ engineered features from raw data
-- **Evaluation:** AUC-ROC, Precision-Recall, Log Loss, CTR Lift Analysis
-
-### Deployment Stack
-- **API Framework:** FastAPI with automatic interactive documentation
-- **Containerization:** Docker for reproducible environments
-- **Model Serialization:** joblib for efficient model persistence
-- **Cloud Platform:** Render (free tier with auto-deployment)
-- **CI/CD:** Automatic deployment on GitHub push
+### ROI Impact
+| Strategy | CTR | Lift vs Random | Efficiency |
+|----------|-----|----------------|-----------|
+| Random Targeting | 17% | 0% (baseline) | 1.0x |
+| Top 25% (XGBoost) | 20-24% | +18-41% | 1.5-2.0x |
+| **Top 10% (XGBoost)** | **24-27%** | **+40-60%** | **2.5-3.0x** |
 
 ---
 
-## Project Structure
+## System Architecture
 
+### Machine Learning Pipeline
+
+![ML Pipeline](images/ml_pipeline.png)
+
+*Complete workflow from data exploration through production model*
+
+**Pipeline Stages:**
+1. **Data Exploration:** 40M+ impressions, class imbalance analysis, temporal patterns
+2. **Feature Engineering:** 30+ features including temporal, frequency, CTR-based, interactions
+3. **Baseline Models:** Logistic Regression (0.70-0.75 AUC)
+4. **Production Model:** XGBoost (0.75-0.80 AUC, 40-60% lift)
+
+---
+
+### Deployment Architecture
+
+![Deployment Architecture](images/deployment_architecture.png)
+
+*Containerized deployment with CI/CD pipeline*
+
+**Deployment Flow:**
 ```
-ctr-prediction/
-│
-├── notebooks/                          # Machine Learning Development
-│   ├── 01_data_exploration.ipynb       # EDA and data analysis
-│   ├── 02_feature_engineering.ipynb    # 30+ engineered features
-│   ├── 03_baseline_models.ipynb        # Logistic Regression baseline
-│   └── 04_xgboost_model.ipynb          # XGBoost & final evaluation
-│
-├── api/                                # Production API
-│   ├── app.py                          # FastAPI application
-│   ├── train_model.py                  # Model training script
-│   ├── Dockerfile                      # Container configuration
-│   └── requirements_api.txt            # API dependencies
-│
-├── data/                               # Data directory
-│   └── README.md                       # Data download instructions
-│
-├── results/                            # Visualizations and outputs
-│   └── visualizations/                 # Model performance charts
-│
-├── requirements.txt                    # ML development dependencies
-├── README.md                           # This file
-└── LICENSE                             # MIT License
+Local Development → GitHub Push → Render Build → Docker Container → Live API
 ```
+
+**Key Features:**
+- Automatic deployment on git push
+- Docker ensures consistent environments
+- Model trains inside container (version compatibility)
+- Health check monitoring at `/` endpoint
+
+---
+
+### API Request Flow
+
+![API Flow](images/api_flow.png)
+
+*Real-time prediction pipeline with sub-100ms latency*
+
+**Request Flow:**
+1. Client sends POST request with ad features
+2. FastAPI validates input with Pydantic
+3. XGBoost model generates CTR prediction
+4. Response returns probability + recommendation
+
+---
+
+### Performance Metrics
+
+![Metrics Dashboard](images/metrics_dashboard.png)
+
+*Key performance indicators and technology stack*
 
 ---
 
@@ -111,32 +141,27 @@ ctr-prediction/
 - Device type significantly impacts click probability
 - Banner position and site category are predictive
 
+---
+
 ### 2. Feature Engineering (Notebook 02)
 
 **30+ Engineered Features:**
 
-**Temporal Features:**
-- Hour of day, day of week, day of month
-- Hour bins (morning, afternoon, evening, night)
-- Weekend indicator, peak hour flags
+| Feature Type | Count | Examples |
+|--------------|-------|----------|
+| **Temporal** | 6 | hour_of_day, day_of_week, is_weekend, hour_bin |
+| **Frequency** | 9 | site_id_freq, app_id_freq, device_type_freq |
+| **CTR-Based** | 8 | site_category_ctr, device_type_ctr (Bayesian smoothing) |
+| **Interaction** | 4 | site×hour, device×hour, app×device |
+| **Count** | 3 | site_count_log, app_count_log, device_count |
 
-**Frequency Encoding:**
-- Appearance frequency for high-cardinality categoricals
-- Normalized frequencies across site_id, app_id, device_id
+**Engineering Techniques:**
+- Bayesian smoothing for CTR estimation
+- Log transforms for count features
+- Cross-product interactions
+- Frequency encoding for high-cardinality categoricals
 
-**CTR-Based Features:**
-- Historical CTR by category with Bayesian smoothing
-- Global mean imputation for rare categories
-- Category-level click rates for sites, apps, devices
-
-**Interaction Features:**
-- Cross-products: site × hour, device × hour, app × device
-- Position × size interactions for ad placement
-- Frequency and CTR encodings for interaction terms
-
-**Count Features:**
-- Popularity metrics with log transforms
-- Appearance counts for sites, apps, devices
+---
 
 ### 3. Baseline Models (Notebook 03)
 
@@ -152,13 +177,15 @@ ctr-prediction/
 - CTR lift by targeting decile
 - Feature importance analysis
 
+---
+
 ### 4. Production Model (Notebook 04)
 
 **XGBoost Gradient Boosting:**
-- scale_pos_weight for class imbalance
+- `scale_pos_weight` for class imbalance
 - Hyperparameters: 100 trees, max_depth=6, learning_rate=0.1
-- AUC-ROC: 0.75-0.80
-- Outperforms baseline by 5-10%
+- **AUC-ROC: 0.75-0.80**
+- **Outperforms baseline by 5-10%**
 
 **Feature Importance (Top 5):**
 1. Historical user CTR (behavioral signal)
@@ -171,20 +198,13 @@ ctr-prediction/
 
 ## API Deployment
 
-### Architecture
+### Architecture Overview
 
 The production API is containerized using Docker and deployed to Render with automatic CI/CD:
 
 ```
 GitHub Push → Render Build → Docker Container → Live API
 ```
-
-**Key Features:**
-- Real-time CTR predictions via REST API
-- Interactive documentation at /docs endpoint
-- Health check monitoring
-- Automatic request validation with Pydantic
-- Model trains inside container ensuring version compatibility
 
 ### API Endpoints
 
@@ -215,36 +235,18 @@ GitHub Push → Render Build → Docker Container → Live API
 ```
 
 **Recommendation Thresholds:**
-- HIGH: CTR ≥ 10% (top decile performance)
-- MEDIUM: CTR ≥ 5% (above average)
-- LOW: CTR < 5% (skip or reduce bid)
+- **HIGH:** CTR ≥ 10% (top decile performance)
+- **MEDIUM:** CTR ≥ 5% (above average)
+- **LOW:** CTR < 5% (skip or reduce bid)
 
 ---
 
 ## Quick Start
 
-### Option 1: Run ML Notebooks Locally
-
-```bash
-# Clone repository
-git clone https://github.com/imadniz/ctr-prediction.git
-cd ctr-prediction
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Launch Jupyter
-jupyter notebook
-
-# Run notebooks in order: 01 → 02 → 03 → 04
-```
-
-### Option 2: Test the Live API
+### Option 1: Test the Live API
 
 **Interactive Documentation:**
-```
-https://ctr-prediction-1.onrender.com/docs
-```
+Visit [https://ctr-prediction-1.onrender.com/docs](https://ctr-prediction-1.onrender.com/docs)
 
 **cURL Example:**
 ```bash
@@ -276,12 +278,30 @@ print(response.json())
 # {'click_probability': 0.0902, 'recommendation': 'LOW'}
 ```
 
-### Option 3: Deploy Your Own Instance
+---
+
+### Option 2: Run ML Notebooks Locally
 
 ```bash
-# Navigate to project
+# Clone repository
+git clone https://github.com/imadniz/ctr-prediction.git
 cd ctr-prediction
 
+# Install dependencies
+pip install -r requirements.txt
+
+# Launch Jupyter
+jupyter notebook
+
+# Run notebooks in order: 01 → 02 → 03 → 04
+```
+
+---
+
+### Option 3: Deploy Your Own Instance
+
+**Local Docker Deployment:**
+```bash
 # Build Docker image
 docker build -t ctr-api .
 
@@ -302,7 +322,7 @@ docker run -p 8000:8000 ctr-api
 
 ## Model Performance
 
-### Comparison: Logistic Regression vs XGBoost
+### Model Comparison
 
 | Metric | Logistic Regression | XGBoost | Improvement |
 |--------|-------------------|---------|-------------|
@@ -311,18 +331,18 @@ docker run -p 8000:8000 ctr-api
 | Training Time | Fast | Moderate | - |
 | Interpretability | High | Medium | - |
 
-### Business Metrics: Targeting Performance
+### Targeting Performance
 
-| Strategy | CTR | Lift vs Random | Efficiency |
-|----------|-----|----------------|-----------|
-| Random Targeting | 17% | 0% (baseline) | 1.0x |
-| Top 25% (XGBoost) | 20-24% | +18-41% | 1.5-2.0x |
-| Top 10% (XGBoost) | 24-27% | +40-60% | 2.5-3.0x |
+**Top 10% Targeting Results:**
+- **CTR:** 24-27% (vs 17% baseline)
+- **Lift:** 40-60% improvement
+- **Efficiency:** 2.5-3x better than random
 
-**Interpretation:**
-- Targeting top 10% of users by predicted CTR delivers 40-60% lift
-- 2.5-3x more efficient than random ad serving
-- Enables precise budget allocation to high-intent users
+**Business Impact:**
+- Enables precision ad targeting
+- Reduces wasted ad spend
+- Provides actionable confidence scores
+- Scalable for production traffic
 
 ---
 
@@ -337,7 +357,7 @@ docker run -p 8000:8000 ctr-api
 
 2. **Class Imbalance Handling is Critical**
    - 1:5 imbalance required special treatment
-   - scale_pos_weight for XGBoost, class_weight for Logistic Regression
+   - `scale_pos_weight` for XGBoost, `class_weight` for Logistic Regression
    - Stratified sampling preserved class distribution
 
 3. **Gradient Boosting Outperforms Linear Models**
@@ -349,6 +369,8 @@ docker run -p 8000:8000 ctr-api
    - Version compatibility (numpy/scikit-learn) can break deployments
    - Training model inside Docker container ensures consistency
    - Health checks and monitoring are essential for reliability
+
+---
 
 ### Business Recommendations
 
@@ -373,33 +395,134 @@ docker run -p 8000:8000 ctr-api
 
 ## Technologies Used
 
-**Languages & Frameworks:**
-- Python 3.8+
-- FastAPI 0.104+
-- Jupyter Notebooks
+### Development Stack
+- **Languages:** Python 3.8+
+- **Notebooks:** Jupyter
+- **Data Processing:** pandas, NumPy
+- **Visualization:** Matplotlib, Seaborn
 
-**Machine Learning:**
-- scikit-learn 1.3+
-- XGBoost 2.0+
-- pandas, NumPy
+### Machine Learning Stack
+- **Models:** scikit-learn 1.3+, XGBoost 2.0+
+- **Serialization:** joblib
+- **Evaluation:** ROC-AUC, Precision-Recall, Lift Analysis
 
-**Deployment:**
-- Docker
-- Render (Cloud Platform)
-- GitHub (Version Control & CI/CD)
-
-**Visualization:**
-- Matplotlib
-- Seaborn
+### Deployment Stack
+- **API Framework:** FastAPI 0.104+
+- **Validation:** Pydantic 2.5+
+- **Server:** Uvicorn
+- **Containerization:** Docker
+- **Cloud Platform:** Render
+- **CI/CD:** GitHub Actions
 
 ---
 
-## Contact
+## Project Structure
 
-**Imad Nizami**  
-Email: imadniz96@gmail.com  
-LinkedIn: [linkedin.com/in/imadnizami](https://www.linkedin.com/in/imadnizami)  
-GitHub: [github.com/imadniz](https://github.com/imadniz)
+```
+ctr-prediction/
+│
+├── notebooks/                          # Machine Learning Development
+│   ├── 01_data_exploration.ipynb       # EDA and data analysis
+│   ├── 02_feature_engineering.ipynb    # 30+ engineered features
+│   ├── 03_baseline_models.ipynb        # Logistic Regression baseline
+│   └── 04_xgboost_model.ipynb          # XGBoost & final evaluation
+│
+├── app.py                              # FastAPI application
+├── train_model.py                      # Model training script
+├── Dockerfile                          # Container configuration
+├── requirements_api.txt                # API dependencies
+├── requirements.txt                    # ML development dependencies
+│
+├── data/                               # Data directory (download separately)
+├── results/                            # Model outputs and visualizations
+├── images/                             # Architecture diagrams for README
+│
+├── README.md                           # This file
+└── LICENSE                             # MIT License
+```
+
+---
+
+## Setup Instructions
+
+### Prerequisites
+- Python 3.8+
+- pip or conda
+- Docker (optional, for containerized deployment)
+- Git
+
+### Installation
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/imadniz/ctr-prediction.git
+cd ctr-prediction
+```
+
+2. **Install dependencies:**
+```bash
+pip install -r requirements.txt
+```
+
+3. **Download the dataset:**
+- Visit [Avazu CTR Prediction on Kaggle](https://www.kaggle.com/c/avazu-ctr-prediction)
+- Download `train.csv` to the `data/` directory
+
+4. **Run the notebooks:**
+```bash
+jupyter notebook
+```
+
+---
+
+## API Documentation
+
+### Running Locally
+
+```bash
+# Install API dependencies
+pip install -r requirements_api.txt
+
+# Start API server
+uvicorn app:app --reload
+
+# Visit interactive docs
+http://localhost:8000/docs
+```
+
+### Docker Deployment
+
+```bash
+# Build image
+docker build -t ctr-api .
+
+# Run container
+docker run -p 8000:8000 ctr-api
+
+# Test endpoint
+curl http://localhost:8000/
+```
+
+### Production Configuration
+
+The API is deployed to Render with the following configuration:
+- **Environment:** Docker
+- **Health Check:** `/` endpoint
+- **Auto-Deploy:** Enabled on GitHub push
+- **Cold Start:** ~20-30 seconds on free tier (first request after 15min idle)
+- **Response Time:** <100ms for subsequent requests
+
+---
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
@@ -409,11 +532,29 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
+## Contact
+
+**Imad Nizami**
+
+- Email: imadniz96@gmail.com
+- LinkedIn: [linkedin.com/in/imadnizami](https://www.linkedin.com/in/imadnizami)
+- GitHub: [github.com/imadniz](https://github.com/imadniz)
+
+---
+
+## Acknowledgments
+
+- Dataset: Avazu Click-Through Rate Prediction Competition on Kaggle
+- Inspired by production CTR prediction systems at major ad platforms
+- Deployment platform: Render (https://render.com)
+
+---
+
 ## Citation
 
 If you use this project in your research or work, please cite:
 
-```
+```bibtex
 @misc{nizami2026ctr,
   author = {Nizami, Imad},
   title = {CTR Prediction with Feature Engineering and Production API},
@@ -425,5 +566,15 @@ If you use this project in your research or work, please cite:
 
 ---
 
+## Star History
+
+If you found this project helpful, please consider giving it a star!
+
+[![Star History Chart](https://api.star-history.com/svg?repos=imadniz/ctr-prediction&type=Date)](https://star-history.com/#imadniz/ctr-prediction&Date)
+
+---
+
 **Live API:** https://ctr-prediction-1.onrender.com/docs  
 **GitHub:** https://github.com/imadniz/ctr-prediction
+
+**Built with passion for machine learning and production systems**
